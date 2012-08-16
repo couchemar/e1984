@@ -35,7 +35,6 @@ handle_cast(_Msg, State) ->
 handle_info(tick, State) ->
     io:format("Tick~n", []),
     request(),
-
     {noreply, State};
 handle_info({http, {_Ref, Response}}, State) ->
     io:format("Get Response ~n", []),
