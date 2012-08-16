@@ -2,22 +2,22 @@
 
 -behaviour(gen_server).
 
--export([start_link/2]).
+-export([start_link/1]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE).
 
--record(state, {tab, sup}).
+-record(state, {tab}).
 
 
-start_link(Tid, Sup) ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [Tid, Sup], []).
+start_link(Tid) ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [Tid], []).
 
-init([Tid, Sup]) ->
+init([Tid]) ->
     gen_server:cast(self(), start),
-    {ok, #state{tab=Tid, sup=Sup}}.
+    {ok, #state{tab=Tid}}.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
@@ -36,11 +36,12 @@ handle_info(tick, State) ->
     io:format("Tick~n", []),
     request(),
     {noreply, State};
-handle_info({http, {_Ref, Response}}, State) ->
+handle_info({http, {_Ref, Response}}, State=#state{tab=TId}) ->
     io:format("Get Response ~n", []),
     {_St, _Hdrs, Body} = Response,
     Result = process_body(Body),
     io:format("Result: ~s~n", [jsx:encode(Result)]),
+    ets:insert(TId, {?MODULE, Result}),
     Result,
 
     {noreply, State}.
