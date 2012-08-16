@@ -1,0 +1,12 @@
+{application, e1984,
+ [
+  {description, ""},
+  {vsn, "0.0.0"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { e1984_app, []}},
+  {env, []}
+ ]}.
