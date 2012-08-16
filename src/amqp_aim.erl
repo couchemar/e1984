@@ -57,10 +57,13 @@ request() ->
     {ok, _RequestId} = httpc:request(get,
                                      {"http://localhost:55672/api/nodes",
                                       [{"Authorization", Auth},
-                                       {"Content-Type", "application/json"}]},
+                                       {"Content-Type", "application/json"}]
+                                     },
                                      [],
                                      [{sync, false},
-                                     {receiver, self()}]).
+                                      {receiver, self()}
+                                     ]
+                                    ).
 
 process_body(Body) ->
     DBody = jsx:decode(Body),
