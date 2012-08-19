@@ -1,4 +1,4 @@
--module(amqp_aim).
+-module(aim).
 
 -behaviour(gen_server).
 

@@ -25,5 +25,5 @@ start_link() ->
 
 init([]) ->
     ?MODULE = ets:new(?MODULE, [set, named_table, public]),
-    {ok, { {one_for_one, 5, 10}, [?CHILD(amqp_aim, worker, ?MODULE)]} }.
+    {ok, { {one_for_one, 5, 10}, [?CHILD(aim, worker, ?MODULE)]} }.
 
