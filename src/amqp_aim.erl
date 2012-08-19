@@ -11,7 +11,6 @@
 
 -record(state, {tab}).
 
-
 start_link(Tid) ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [Tid], []).
 
@@ -24,7 +23,6 @@ handle_call(_Request, _From, State) ->
     {reply, Reply, State}.
 
 handle_cast(start, State) ->
-    io:format("Started~n", []),
     inets:start(),
     timer:send_interval(5000, tick),
     {noreply, State};
@@ -33,17 +31,12 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(tick, State) ->
-    io:format("Tick~n", []),
-    request(),
+    amqp_metrics:get(nodes, []),
     {noreply, State};
 handle_info({http, {_Ref, Response}}, State=#state{tab=TId}) ->
-    io:format("Get Response ~n", []),
     {_St, _Hdrs, Body} = Response,
-    Result = process_body(Body),
-    io:format("Result: ~s~n", [jsx:encode(Result)]),
+    Result = amqp_metrics:process(Body),
     ets:insert(TId, {?MODULE, Result}),
-    Result,
-
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -51,28 +44,3 @@ terminate(_Reason, _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
-request() ->
-    Auth = "Basic " ++ base64:encode_to_string("guest:guest"),
-    {ok, _RequestId} = httpc:request(get,
-                                     {"http://localhost:55672/api/nodes",
-                                      [{"Authorization", Auth},
-                                       {"Content-Type", "application/json"}]
-                                     },
-                                     [],
-                                     [{sync, false},
-                                      {receiver, self()}
-                                     ]
-                                    ).
-
-process_body(Body) ->
-    DBody = jsx:decode(Body),
-    lists:foldl(fun process_node/2, [], DBody).
-
-process_node(Node, Acc) ->
-    NodeName = proplists:get_value(<<"name">>, Node),
-    FdTotal = proplists:get_value(<<"fd_total">>, Node),
-    FdUsed = proplists:get_value(<<"fd_used">>, Node),
-    FdFree = FdTotal - FdUsed,
-    Acc ++ [[{<<"node_name">>, NodeName}, {<<"fd_free">>, FdFree}]].
-
