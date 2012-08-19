@@ -26,17 +26,14 @@ handle_cast(start, State) ->
     inets:start(),
     timer:send_interval(5000, tick),
     {noreply, State};
-
+handle_cast({result, Result}, State=#state{tab=TId}) ->
+    ets:insert(TId, {?MODULE, Result}),
+    {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(tick, State) ->
-    amqp_metrics:get(nodes, []),
-    {noreply, State};
-handle_info({http, {_Ref, Response}}, State=#state{tab=TId}) ->
-    {_St, _Hdrs, Body} = Response,
-    Result = amqp_metrics:process(Body),
-    ets:insert(TId, {?MODULE, Result}),
+    amqp_metrics:get(nodes, self()),
     {noreply, State}.
 
 terminate(_Reason, _State) ->

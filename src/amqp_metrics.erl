@@ -1,18 +1,19 @@
 -module(amqp_metrics).
 
--export([get/2, process/1]).
+-export([get/2]).
 
-get(nodes, Params) ->
-    get_nodes();
-get(_Name, _Params) ->
+get(nodes, Pid) ->
+    get_nodes(Pid);
+get(_Name, _Pid) ->
     {error, unsuported}.
 
 process(Body) ->
     DBody = jsx:decode(Body),
     lists:foldl(fun process_node/2, [], DBody).
 
-get_nodes() ->
+get_nodes(Pid) ->
     Auth = "Basic " ++ base64:encode_to_string("guest:guest"),
+    ReceiverPid = spawn(fun() -> receive_nodes(Pid) end),
     {ok, _RequestId} = httpc:request(get,
                                      {"http://localhost:55672/api/nodes",
                                       [{"Authorization", Auth},
@@ -21,7 +22,7 @@ get_nodes() ->
                                      },
                                      [],
                                      [{sync, false},
-                                      {receiver, self()}
+                                      {receiver, ReceiverPid}
                                      ]
                                     ).
 
@@ -31,3 +32,17 @@ process_node(Node, Acc) ->
     FdUsed = proplists:get_value(<<"fd_used">>, Node),
     FdFree = FdTotal - FdUsed,
     Acc ++ [[{<<"node_name">>, NodeName}, {<<"fd_free">>, FdFree}]].
+
+receive_nodes(Pid) ->
+    receive
+        {http, {_Ref, Response}} ->
+            {_St, _Hdrs, Body} = Response,
+            Result = process(Body),
+            cast_back(Pid, Result),
+            exit(normal)
+    after 10000 ->
+            timeout
+    end.
+
+cast_back(Pid, Result) ->
+    gen_server:cast(Pid, {result, Result}).
