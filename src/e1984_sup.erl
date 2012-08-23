@@ -10,7 +10,9 @@
 -export([init/1]).
 
 %% Helper macro for declaring children of supervisor
--define(CHILD(I, Type, T), {I, {I, start_link, [T]}, permanent, 5000, Type, [I]}).
+-define(CHILD(I, Type, T, Cb, TimeInterval),
+        {I, {I, start_link, [T, Cb, TimeInterval]},
+         permanent, 5000, Type, [I]}).
 
 %% ===================================================================
 %% API functions
@@ -25,5 +27,12 @@ start_link() ->
 
 init([]) ->
     ?MODULE = ets:new(?MODULE, [set, named_table, public]),
-    {ok, { {one_for_one, 5, 10}, [?CHILD(aim, worker, ?MODULE)]} }.
+    {ok, { {one_for_one, 5, 10},
+           [?CHILD(aim, worker,
+                   ?MODULE,
+                   amqp_metricks,
+                   5000)
+           ]
+         }
+    }.
 
