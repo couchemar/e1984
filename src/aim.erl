@@ -29,13 +29,16 @@ handle_cast({start, TimeInt}, State) ->
     inets:start(),
     timer:send_interval(TimeInt, tick),
     {noreply, State};
-handle_cast({result, Result}, State=#state{tab=TId}) ->
+handle_cast({result, Metric, Result}, State=#state{tab=TId}) ->
+    lager:info("Got result from ~s", [Metric]),
+    lager:debug("~s result: ~s", [Metric, jsx:encode(Result)]),
     ets:insert(TId, {?MODULE, Result}),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(tick, State) ->
+    lager:debug("Tick"),
     amqp_metrics:get(nodes, self()),
     {noreply, State}.
 
