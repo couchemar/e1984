@@ -9,9 +9,7 @@
 
 -define(SERVER, ?MODULE).
 
-%% Интервал тика держать в состоянии совсем не обязательно,
-%% и даже наверное стоит его оттуда убрать. но не сейчас.
--record(state, {tab, cb_module, interval}).
+-record(state, {tab, cb_module}).
 
 start_link(Tid, Cb, TimeInterval) ->
     gen_server:start_link({local, ?SERVER},
@@ -20,16 +18,14 @@ start_link(Tid, Cb, TimeInterval) ->
                           []).
 
 init([Tid, Cb, TimeInterval]) ->
-    gen_server:cast(self(), start),
-    {ok, #state{tab=Tid,
-                cb_module=Cb,
-                interval=TimeInterval}}.
+    gen_server:cast(self(), {start, TimeInterval}),
+    {ok, #state{tab=Tid, cb_module=Cb}}.
 
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
-handle_cast(start, State=#state{interval=TimeInt}) ->
+handle_cast({start, TimeInt}, State) ->
     inets:start(),
     timer:send_interval(TimeInt, tick),
     {noreply, State};
@@ -40,7 +36,6 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 handle_info(tick, State) ->
-    io:format("tick"),
     amqp_metrics:get(nodes, self()),
     {noreply, State}.
 
