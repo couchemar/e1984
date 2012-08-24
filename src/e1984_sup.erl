@@ -3,36 +3,31 @@
 
 -behaviour(supervisor).
 
-%% API
 -export([start_link/0]).
 
-%% Supervisor callbacks
 -export([init/1]).
 
-%% Helper macro for declaring children of supervisor
--define(CHILD(I, Type, T, Cb, TimeInterval),
-        {I, {I, start_link, [T, Cb, TimeInterval]},
+-define(AIM(I, Type, Table, Cb, TimeInterval),
+        {I, {I, start_link, [Table, Cb, TimeInterval]},
          permanent, 5000, Type, [I]}).
-
-%% ===================================================================
-%% API functions
-%% ===================================================================
+-define(PUSHER(I, Type, Table, TimeInterval),
+        {I, {I, start_link, [Table, TimeInterval]},
+         permanent, 5000, Type, [I]}).
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% ===================================================================
-%% Supervisor callbacks
-%% ===================================================================
-
 init([]) ->
     ?MODULE = ets:new(?MODULE, [set, named_table, public]),
-    {ok, { {one_for_one, 5, 10},
-           [?CHILD(aim, worker,
+    AIMS = [?AIM(aim, worker,
                    ?MODULE,
                    amqp_metricks,
                    5000)
-           ]
+           ],
+    PUSHERS = [?PUSHER(amazon_cloudwatch_pusher, worker, ?MODULE, 20000)],
+    {ok, { {one_for_one, 5, 10},
+           AIMS ++ PUSHERS
          }
     }.
+
 

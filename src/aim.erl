@@ -22,8 +22,7 @@ init([Tid, Cb, TimeInterval]) ->
     {ok, #state{tab=Tid, cb_module=Cb}}.
 
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, ok, State}.
 
 handle_cast({start, TimeInt}, State) ->
     inets:start(),
@@ -40,6 +39,8 @@ handle_cast(_Msg, State) ->
 handle_info(tick, State) ->
     lager:debug("Tick"),
     amqp_metrics:get(nodes, self()),
+    {noreply, State};
+handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
