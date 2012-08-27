@@ -7,9 +7,9 @@
 
 -export([init/1]).
 
--define(AIM(I, M, Type, Table, Cb, TimeInterval),
-        {I, {M, start_link, [I, Table, Cb, TimeInterval]},
-         permanent, 5000, Type, [M]}).
+-define(AIM(Name, Table, Cb, TimeInterval),
+        {Name, {aim, start_link, [Name, Table, Cb, TimeInterval]},
+         permanent, 5000, worker, [aim]}).
 -define(PUSHER(I, Type, Table, TimeInterval),
         {I, {I, start_link, [Table, TimeInterval]},
          permanent, 5000, Type, [I]}).
@@ -19,11 +19,11 @@ start_link() ->
 
 init([]) ->
     ?MODULE = ets:new(?MODULE, [set, named_table, public]),
-    AIMS = [?AIM(aim_amqp, aim, worker,
-                   ?MODULE,
-                   amqp_metrics,
-                   5000),
-            ?AIM(aim_test, aim, worker,
+    AIMS = [?AIM(aim_amqp,
+                 ?MODULE,
+                 amqp_metrics,
+                 5000),
+            ?AIM(aim_test,
                  ?MODULE,
                  test_metrics,
                  10000)

@@ -9,17 +9,19 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {tab, cb_module}).
+-record(state, {tab,
+                cb_module,
+                aim_name}).
 
 start_link(Name, Tid, Cb, TimeInterval) ->
     gen_server:start_link({local, Name},
                           ?MODULE,
-                          [Tid, Cb, TimeInterval],
+                          [Name, Tid, Cb, TimeInterval],
                           []).
 
-init([Tid, Cb, TimeInterval]) ->
+init([Name, Tid, Cb, TimeInterval]) ->
     gen_server:cast(self(), {start, TimeInterval}),
-    {ok, #state{tab=Tid, cb_module=Cb}}.
+    {ok, #state{tab=Tid, cb_module=Cb, aim_name=Name}}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -36,9 +38,10 @@ handle_cast({result, Metric, Result}, State=#state{tab=TId}) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info(tick, State=#state{cb_module=Cb}) ->
-    lager:debug("Tick"),
-    Cb:get(nodes, self()),
+handle_info(tick, State=#state{cb_module=Cb, aim_name=Name}) ->
+    lager:debug("~s tick", [Name]),
+    % Получать метрики из переданого при инициализации списка.
+    Cb:get_metrics(nodes, self()),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.

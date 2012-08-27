@@ -1,10 +1,10 @@
 -module(amqp_metrics).
 
--export([get/2]).
+-export([get_metrics/2]).
 
-get(nodes, Pid) ->
+get_metrics(nodes, Pid) ->
     get_nodes(Pid);
-get(_Name, _Pid) ->
+get_metrics(_Name, _Pid) ->
     {error, unsuported}.
 
 process(Body) ->

@@ -1,8 +1,8 @@
 -module(test_metrics).
 
--export([get/2]).
+-export([get_metrics/2]).
 
-get(nodes, Pid) ->
+get_metrics(_, Pid) ->
     cast_back(Pid, [{<<"test">>, <<"Test">>}]).
 
 cast_back(Pid, Result) ->
