@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/3]).
+-export([start_link/4]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -11,8 +11,8 @@
 
 -record(state, {tab, cb_module}).
 
-start_link(Tid, Cb, TimeInterval) ->
-    gen_server:start_link({local, ?SERVER},
+start_link(Name, Tid, Cb, TimeInterval) ->
+    gen_server:start_link({local, Name},
                           ?MODULE,
                           [Tid, Cb, TimeInterval],
                           []).
@@ -36,9 +36,9 @@ handle_cast({result, Metric, Result}, State=#state{tab=TId}) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info(tick, State) ->
+handle_info(tick, State=#state{cb_module=Cb}) ->
     lager:debug("Tick"),
-    amqp_metrics:get(nodes, self()),
+    Cb:get(nodes, self()),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
