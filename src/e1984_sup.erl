@@ -7,8 +7,8 @@
 
 -export([init/1]).
 
--define(AIM(Name, Table, Cb, TimeInterval),
-        {Name, {aim, start_link, [Name, Table, Cb, TimeInterval]},
+-define(AIM(Name, Table, Cb, Metrics, TimeInterval),
+        {Name, {aim, start_link, [Name, Table, Cb, Metrics, TimeInterval]},
          permanent, 5000, worker, [aim]}).
 -define(PUSHER(I, Type, Table, TimeInterval),
         {I, {I, start_link, [Table, TimeInterval]},
@@ -22,10 +22,12 @@ init([]) ->
     AIMS = [?AIM(aim_amqp,
                  ?MODULE,
                  amqp_metrics,
+                 [nodes],
                  5000),
             ?AIM(aim_test,
                  ?MODULE,
                  test_metrics,
+                 [test],
                  10000)
            ],
     PUSHERS = [?PUSHER(amazon_cloudwatch_pusher, worker, ?MODULE, 20000)],

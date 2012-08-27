@@ -38,11 +38,11 @@ receive_nodes(Pid) ->
         {http, {_Ref, Response}} ->
             {_St, _Hdrs, Body} = Response,
             Result = process(Body),
-            cast_back(Pid, Result),
+            cast_back(Pid, nodes, Result),
             exit(normal)
     after 10000 ->
             timeout
     end.
 
-cast_back(Pid, Result) ->
-    gen_server:cast(Pid, {result, ?MODULE, Result}).
+cast_back(Pid, Metric, Result) ->
+    gen_server:cast(Pid, {result, ?MODULE, Metric, Result}).
