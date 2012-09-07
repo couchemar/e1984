@@ -9,4 +9,4 @@ compile:
 
 start:
 	make compile
-	@erl +A 4 -pa ebin/ -pa deps/*/ebin/ -config src/app.config -eval "application:start(e1984)."
+	@erl +K true +A 4 -pa ebin/ -pa deps/*/ebin/ -config src/app.config -s e1984_app
