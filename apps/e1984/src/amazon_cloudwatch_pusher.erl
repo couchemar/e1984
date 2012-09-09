@@ -44,5 +44,5 @@ code_change(_OldVsn, State, _Extra) ->
 amazon_prepare() ->
     erlcloud:start(),
     erlcloud_ec2:configure("11111111111111111111",
-                           "2222222222222222222222222222222222222222",
-                           "localhost").
+                           "2222222222222222222222222222222222222222"),
+    erlcloud_mon:configure_host("localhost", "9999", "http").

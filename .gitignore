@@ -1,8 +1,7 @@
 erl_crash.dump
 
 /deps
-/ebin/*.app
-/ebin/*.beam
+ebin/
 .eunit/
 doc/
 log/
