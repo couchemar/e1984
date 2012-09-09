@@ -1,6 +1,8 @@
 -module(amqp_metrics).
 
 -export([get_metrics/2]).
+-define(FILE_DESCRIPTORS, "Free file descriptors for node ").
+-define(NAMESPACE, "CustomMetrics: AMQP").
 
 get_metrics(nodes, Pid) ->
     get_nodes(Pid);
@@ -9,7 +11,7 @@ get_metrics(_Name, _Pid) ->
 
 process(Body) ->
     DBody = jsx:decode(Body),
-    lists:foldl(fun process_node/2, [], DBody).
+    lists:foldl(fun process_node/2, dict:new(), DBody).
 
 get_nodes(Pid) ->
     Auth = "Basic " ++ base64:encode_to_string("guest:guest"),
@@ -31,7 +33,7 @@ process_node(Node, Acc) ->
     FdTotal = proplists:get_value(<<"fd_total">>, Node),
     FdUsed = proplists:get_value(<<"fd_used">>, Node),
     FdFree = FdTotal - FdUsed,
-    Acc ++ [[{<<"node_name">>, NodeName}, {<<"fd_free">>, FdFree}]].
+    dict:store(?FILE_DESCRIPTORS ++ NodeName, {FdFree, "Count"}, Acc).
 
 receive_nodes(Pid) ->
     receive
@@ -41,8 +43,8 @@ receive_nodes(Pid) ->
             cast_back(Pid, nodes, Result),
             exit(normal)
     after 10000 ->
-            timeout
+            exit(timeout)
     end.
 
 cast_back(Pid, Metric, Result) ->
-    gen_server:cast(Pid, {result, ?MODULE, Metric, Result}).
+    gen_server:cast(Pid, {result, ?MODULE, Metric, ?NAMESPACE, Result}).

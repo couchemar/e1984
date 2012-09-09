@@ -7,30 +7,28 @@
 
 -export([init/1]).
 
--define(AIM(Name, Table, Cb, Metrics, TimeInterval),
-        {Name, {aim, start_link, [Name, Table, Cb, Metrics, TimeInterval]},
+-define(AIM(Name, Cb, Metrics, TimeInterval),
+        {Name, {aim, start_link, [Name, Cb, Metrics, TimeInterval]},
          permanent, 5000, worker, [aim]}).
--define(PUSHER(I, Type, Table, TimeInterval),
-        {I, {I, start_link, [Table, TimeInterval]},
+-define(PUSHER(I, Type, TimeInterval),
+        {I, {I, start_link, [TimeInterval]},
          permanent, 5000, Type, [I]}).
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    ?MODULE = ets:new(?MODULE, [set, named_table, public]),
+    ets:new(metrics, [set, named_table, public]),
     AIMS = [?AIM(aim_amqp,
-                 ?MODULE,
-                 amqp_metrics,
+                  amqp_metrics,
                  [nodes],
                  5000),
             ?AIM(aim_test,
-                 ?MODULE,
-                 test_metrics,
+                  test_metrics,
                  [test],
                  10000)
            ],
-    PUSHERS = [?PUSHER(amazon_cloudwatch_pusher, worker, ?MODULE, 20000)],
+    PUSHERS = [?PUSHER(amazon_cloudwatch_pusher, worker, 20000)],
     {ok, { {one_for_one, 5, 10},
            AIMS ++ PUSHERS
          }
