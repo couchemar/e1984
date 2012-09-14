@@ -47,4 +47,4 @@ receive_nodes(Pid) ->
     end.
 
 cast_back(Pid, Metric, Result) ->
-    gen_server:cast(Pid, {result, ?MODULE, Metric, ?NAMESPACE, Result}).
+    gen_server:cast(Pid, {result, ?NAMESPACE, ?MODULE, Metric, Result}).

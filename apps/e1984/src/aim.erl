@@ -30,12 +30,12 @@ handle_cast({start, TimeInt}, State) ->
     inets:start(),
     timer:send_interval(TimeInt, tick),
     {noreply, State};
-handle_cast({result, Metric, MetricName, Result},
+handle_cast({result, Namespace, Aim, MetricName, Result},
             State) ->
-    lager:info("Got result from ~s[~s]", [Metric, MetricName]),
-    lager:debug("~s[~s] result: ~s", [Metric, MetricName,
+    lager:info("Got result from ~s:~s[~s]", [Namespace, Aim, MetricName]),
+    lager:debug("~s:~s[~s] result: ~s", [Namespace, Aim, MetricName,
                                       jsx:encode(Result)]),
-    ets:insert(metrics, {{Metric, MetricName}, Result}),
+    metrics_store:put({Namespace, Aim, MetricName}, Result),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.

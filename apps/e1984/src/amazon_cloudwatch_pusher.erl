@@ -32,10 +32,10 @@ handle_cast(_Msg, State) ->
 
 handle_info(tick, State) ->
     lager:debug("Tack"),
-    Metrics = get_metrics(),
-    dict:map(fun (Ns, M) ->
-                     erlcloud_mon:put_metric_data(Ns, M) end,
-             Metrics),
+%%    Metrics = metrics_store:get_metrics(),
+%%    dict:map(fun (Ns, M) ->
+%%                     erlcloud_mon:put_metric_data(Ns, M) end,
+%%             Metrics),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -52,12 +52,6 @@ amazon_prepare() ->
                            "2222222222222222222222222222222222222222"),
     erlcloud_mon:configure_host("localhost", "9999", "http").
 
-get_metrics() ->
-    ets:foldl(fun get_metric/2, dict:new(), metrics).
-get_metric(Item, Acc) ->
-    {{_, _}, MetricDict} = Item,
-    dict:fold(fun dict_record_to_metric/3, dict:new(), MetricDict),
-    dict:append(MetricName, Metric, Acc).
 
 dict_record_to_metric(Key, {Val, Unit, NameSpace}, Acc) ->
     Metric = #metric_datum{
