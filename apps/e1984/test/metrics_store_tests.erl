@@ -27,12 +27,16 @@ store_test(_) ->
                 ValueList1 = lists:map(F1, ValueList),
                 {Ns, ValueList1}
         end,
+
+    Res = metrics_store:get_metrics(F),
     [?_assertEqual(
-        dict:from_list([{"Namespace1", [{"metric1_key1", {1, "Count"}},
-                                        {"metric3_key1", {3, "Count"}},
-                                        {"metric1_key2", {5, "Count"}},
-                                        {"metric4_key1", {4, "Count"}}
-                                       ]},
-                        {"Namespace2", [{"metric2_key1", {2, "Count"}}]}]),
-        metrics_store:get_metrics(F)
-       )].
+        [{"metric2_key1",{2,"Count"}}],
+        dict:fetch("Namespace2", Res)),
+     ?_assertEqual(
+        lists:sort([{"metric1_key1",{1,"Count"}},
+         {"metric4_key1",{4,"Count"}},
+         {"metric3_key1",{3,"Count"}},
+         {"metric3_key2",{5,"Count"}}]),
+        lists:sort(dict:fetch("Namespace1", Res)))
+    ].
+

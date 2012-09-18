@@ -13,5 +13,10 @@ put(Key, Metric) ->
 %% Функция Transform должна возвращать ключ и значение которе
 %% попадет в словарь.
 get_metrics(Transform) ->
-    R = qlc:q([Transform(K, V) || {K,V} <- ets:table(?METRICS)]),
-    qlc:e(R).
+    TrMetrics = qlc:q([Transform(K, V) || {K,V} <- ets:table(?METRICS)]),
+    MetricsList = qlc:e(TrMetrics),
+    F = fun (Item, Acc) ->
+                {Key, Value} = Item,
+                dict:append_list(Key, Value, Acc)
+        end,
+    lists:foldl(F, dict:new(), MetricsList).
