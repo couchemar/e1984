@@ -11,14 +11,13 @@ start() ->
 
 store_test(_) ->
     metrics_store:put({"Namespace1", "test", "metric1"},
-                      {1, "Count"}),
+                      dict:from_list([{1, "Count"}])),
     metrics_store:put({"Namespace2", "test", "metric2"},
-                      {2, "Count"}),
+                      dict:from_list([{2, "Count"}])),
     metrics_store:put({"Namespace1", "test", "metric3"},
-                      {3, "Count"}),
+                      dict:from_list([{3, "Count"}])),
     metrics_store:put({"Namespace1", "test", "metric4"},
-                      {4, "Count"}),
-
+                      dict:from_list([{4, "Count"}])),
 
     [?_assertEqual(
         [{4, 1}, {3, 2}, {2, 3}, {1, 4}],
