@@ -32,10 +32,8 @@ handle_cast(_Msg, State) ->
 
 handle_info(tick, State) ->
     lager:debug("Tack"),
-%%    Metrics = metrics_store:get_metrics(),
-%%    dict:map(fun (Ns, M) ->
-%%                     erlcloud_mon:put_metric_data(Ns, M) end,
-%%             Metrics),
+    %% Получить тут метрики в формате пригодном для отправки
+    %% в амазон и запушить их.
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -51,19 +49,3 @@ amazon_prepare() ->
     erlcloud_ec2:configure("11111111111111111111",
                            "2222222222222222222222222222222222222222"),
     erlcloud_mon:configure_host("localhost", "9999", "http").
-
-
-dict_record_to_metric(Key, {Val, Unit, NameSpace}, Acc) ->
-    Metric = #metric_datum{
-      metric_name = Key,
-      dimensions = [],
-      statistic_values = undefined,
-      timestamp = undefined,
-      unit = Unit,
-      value = Val
-     },
-    dict:append(NameSpace, Metric, Acc).
-
-
-
-
