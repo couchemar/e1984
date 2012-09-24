@@ -7,6 +7,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
+-export([to_amazon_metrics/2]).
+
 -include_lib("erlcloud/include/erlcloud.hrl").
 -include_lib("erlcloud/include/erlcloud_mon.hrl").
 
@@ -49,3 +51,6 @@ amazon_prepare() ->
     erlcloud_ec2:configure("11111111111111111111",
                            "2222222222222222222222222222222222222222"),
     erlcloud_mon:configure_host("localhost", "9999", "http").
+
+to_amazon_metrics(Key, Value) ->
+    {Key, Value}.

@@ -2,14 +2,14 @@
 -include_lib("eunit/include/eunit.hrl").
 
 metrics_store_test_() ->
-    {setup,
+    {foreach,
      fun start/0,
-     fun store_test/1}.
+     fun stop/1,
+     [fun simple_store_test/1,
+      fun amazon_store_test/1]}.
 
 start() ->
-    ets:new(metrics, [named_table, set]).
-
-store_test(_) ->
+    ets:new(metrics, [named_table, set]),
     metrics_store:put({"Namespace1", "test", "metric1"},
                       dict:from_list([{"key1", {1, "Count"}}])),
     metrics_store:put({"Namespace2", "test", "metric2"},
@@ -18,8 +18,12 @@ store_test(_) ->
                       dict:from_list([{"key1", {3, "Count"}},
                                       {"key2", {5, "Count"}}])),
     metrics_store:put({"Namespace1", "test", "metric4"},
-                      dict:from_list([{"key1", {4, "Count"}}])),
+                      dict:from_list([{"key1", {4, "Count"}}])).
 
+stop(_) ->
+    ets:delete(metrics).
+
+simple_store_test(_) ->
     F = fun (Key, Value) ->
                 {Ns, _, M1} = Key,
                 ValueList = dict:to_list(Value),
@@ -40,3 +44,10 @@ store_test(_) ->
         lists:sort(dict:fetch("Namespace1", Res)))
     ].
 
+amazon_store_test(_) ->
+    Res = metrics_store:get_metrics(
+            fun amazon_cloudwatch_pusher:to_amazon_metrics/2
+           ),
+    [?_assertEqual([{"1", "2"}],
+                   dict:fetch("Namespace1", Res))
+    ].
