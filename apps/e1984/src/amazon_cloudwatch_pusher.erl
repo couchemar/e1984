@@ -53,4 +53,17 @@ amazon_prepare() ->
     erlcloud_mon:configure_host("localhost", "9999", "http").
 
 to_amazon_metrics(Key, Value) ->
-    {Key, Value}.
+    {NameSpace, _, _} = Key,
+    ValueList = dict:to_list(Value),
+    F = fun ({MetricName, {Val, Unit}}) ->
+                #metric_datum{
+              metric_name = MetricName,
+              dimensions = [],
+              statistic_values = undefined,
+              timestamp = undefined,
+              unit = Unit,
+              value = Val
+             }
+        end,
+    ValueList1 = lists:map(F, ValueList),
+    {NameSpace, ValueList1}.
