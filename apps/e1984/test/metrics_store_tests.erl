@@ -38,16 +38,26 @@ simple_store_test(_) ->
         dict:fetch("Namespace2", Res)),
      ?_assertEqual(
         lists:sort([{"metric1_key1",{1,"Count"}},
-         {"metric4_key1",{4,"Count"}},
-         {"metric3_key1",{3,"Count"}},
-         {"metric3_key2",{5,"Count"}}]),
-        lists:sort(dict:fetch("Namespace1", Res)))
-    ].
+                    {"metric4_key1",{4,"Count"}},
+                    {"metric3_key1",{3,"Count"}},
+                    {"metric3_key2",{5,"Count"}}]),
+        lists:sort(dict:fetch("Namespace1", Res)))].
+
+-include_lib("erlcloud/include/erlcloud.hrl").
+-include_lib("erlcloud/include/erlcloud_mon.hrl").
+
+-define(M(N, V, U), #metric_datum{metric_name=N,
+                                  value=V,
+                                  unit=U}).
 
 amazon_store_test(_) ->
     Res = metrics_store:get_metrics(
             fun amazon_cloudwatch_pusher:to_amazon_metrics/2
            ),
-    [?_assertEqual([{"1", "2"}],
-                   dict:fetch("Namespace1", Res))
-    ].
+    [?_assertEqual([?M("key1", 1, "Count"),
+                    ?M("key1", 4, "Count"),
+                    ?M("key1", 3, "Count"),
+                    ?M("key2", 5, "Count")],
+                   dict:fetch("Namespace1", Res)),
+     ?_assertEqual([?M("key1", 2, "Count")],
+                   dict:fetch("Namespace2", Res))].

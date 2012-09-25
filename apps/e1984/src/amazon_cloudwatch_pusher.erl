@@ -58,9 +58,6 @@ to_amazon_metrics(Key, Value) ->
     F = fun ({MetricName, {Val, Unit}}) ->
                 #metric_datum{
               metric_name = MetricName,
-              dimensions = [],
-              statistic_values = undefined,
-              timestamp = undefined,
               unit = Unit,
               value = Val
              }
