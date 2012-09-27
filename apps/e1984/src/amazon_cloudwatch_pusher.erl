@@ -36,6 +36,14 @@ handle_info(tick, State) ->
     lager:debug("Tack"),
     %% Получить тут метрики в формате пригодном для отправки
     %% в амазон и запушить их.
+    MetricsDict = metrics_store:get_metrics(fun to_amazon_metrics/2),
+    lager:debug("Metrics: ~p", [MetricsDict]),
+    dict:map(
+      fun (NameSpace, MetricValues) ->
+              erlcloud_mon:put_metric_data(NameSpace, MetricValues)
+      end,
+      MetricsDict
+     ),
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -56,11 +64,10 @@ to_amazon_metrics(Key, Value) ->
     {NameSpace, _, _} = Key,
     ValueList = dict:to_list(Value),
     F = fun ({MetricName, {Val, Unit}}) ->
-                #metric_datum{
-              metric_name = MetricName,
-              unit = Unit,
-              value = Val
-             }
+                #metric_datum{metric_name = MetricName,
+                              dimensions  = [],
+                              unit = Unit,
+                              value = Val}
         end,
     ValueList1 = lists:map(F, ValueList),
     {NameSpace, ValueList1}.

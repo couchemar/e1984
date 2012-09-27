@@ -32,9 +32,10 @@ handle_cast({start, TimeInt}, State) ->
     {noreply, State};
 handle_cast({result, Namespace, Aim, MetricName, Result},
             State) ->
-    lager:info("Got result from ~s:~s[~s]", [Namespace, Aim, MetricName]),
-    lager:debug("~s:~s[~s] result: ~s", [Namespace, Aim, MetricName,
-                                      jsx:encode(Result)]),
+    lager:info("Got result from ~s:~s[~s]", [Namespace, Aim,
+                                             MetricName]),
+    lager:debug("~s:~s[~s] result: ~p", [Namespace, Aim,
+                                         MetricName, Result]),
     metrics_store:put({Namespace, Aim, MetricName}, Result),
     {noreply, State};
 handle_cast(_Msg, State) ->

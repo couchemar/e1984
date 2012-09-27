@@ -32,7 +32,7 @@ process_node(Node, Acc) ->
     NodeName = proplists:get_value(<<"name">>, Node),
     FdTotal = proplists:get_value(<<"fd_total">>, Node),
     FdUsed = proplists:get_value(<<"fd_used">>, Node),
-    FdFree = FdTotal - FdUsed,
+    FdFree = float(FdTotal - FdUsed),
     dict:store(?FILE_DESCRIPTORS ++ NodeName, {FdFree, "Count"}, Acc).
 
 receive_nodes(Pid) ->
