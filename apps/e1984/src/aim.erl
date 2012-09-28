@@ -45,7 +45,9 @@ handle_info(tick, State=#state{cb_module=Cb,
                                aim_name=Name,
                                metrics=Metrics}) ->
     lager:debug("~s tick", [Name]),
-    [Cb:get_metrics(MetricName, self()) || MetricName <- Metrics],
+    % Вообще тут стоило бы использовать какой-нибудь
+    % simple_one_for_one супервизор.
+    [spawn(Cb, get_metrics, [MetricName, self()]) || MetricName <- Metrics],
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
