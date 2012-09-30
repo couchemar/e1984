@@ -20,16 +20,7 @@ end_per_suite(_Config) ->
     ok.
 
 all() ->
-    [{group, pushers}].
-
-groups() ->
-    [{pushers, [], [cloudwatch_pushers]}].
-
-init_per_group(_, Config) ->
-    Config.
-
-end_per_group(_, _Config) ->
-    ok.
+    [cloudwatch_pushers].
 
 init_per_testcase(cloudwatch_pushers, Config) ->
     ets:new(metrics, [named_table, set]),
