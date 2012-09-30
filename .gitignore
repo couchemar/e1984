@@ -1,10 +1,12 @@
 erl_crash.dump
 
+*.beam
 /deps
 ebin/
 .eunit/
 doc/
 log/
+logs/
 *~
 #*
 *#

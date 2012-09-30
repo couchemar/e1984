@@ -48,7 +48,8 @@ simple_store_test(_) ->
 
 -define(M(N, V, U), #metric_datum{metric_name=N,
                                   value=V,
-                                  unit=U}).
+                                  unit=U,
+                                  dimensions=[]}).
 
 amazon_store_test(_) ->
     Res = metrics_store:get_metrics(
