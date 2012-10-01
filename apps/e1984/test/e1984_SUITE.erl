@@ -5,18 +5,19 @@
 -include_lib("common_test/include/ct.hrl").
 
 init_per_suite(Config) ->
-    %{ok, Server} = inets:start(
-    %                 httpd,
-    %                 [{port, 9999},
-     %%                 {server_name, "test.test"},
-     %                 {server_root, "/tmp"},
-      %                {documet_root, "/tmp"}],
-       %              stand_alone),
-    %e1984_app:start(),
-    %[{http_server, Server} | Config].
-    Config.
+    inets:start(),
+    {ok, Server} = inets:start(
+                     httpd,
+                     [{port, 9998},
+                      {server_name, "test.test"},
+                      {server_root, "/tmp"},
+                      {document_root, "/tmp"},
+                      {modules, [?MODULE]}]),
+    [{http_server, Server} | Config].
 
-end_per_suite(_Config) ->
+end_per_suite(Config) ->
+    inets:stop(httpd, ?config(http_server, Config)),
+    inets:stop(),
     ok.
 
 all() ->
@@ -41,7 +42,12 @@ cloudwatch_pushers(_Config) ->
     ok.
 
 
-%
+%=====================================================================
 % httpd callbacks
-%
+%=====================================================================
 
+-include_lib("inets/include/httpd.hrl").
+
+do(_ModData) ->
+    {proceed,
+     [{response, {200, [<<"OK!">>]}}]}.
