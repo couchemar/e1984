@@ -27,18 +27,22 @@ init_per_testcase(cloudwatch_pushers, Config) ->
     ets:new(metrics, [named_table, set]),
     metrics_store:put({"Namespace1", "test", "metric1"},
                       dict:from_list([{"key1", {1.0, "Count"}}])),
+    ets:new(results, [named_table, set, public]),
+    ets:insert(results, {count, 0}),
     amazon_cloudwatch_pusher:start_link(100),
     Config;
 init_per_testcase(_, Config) ->
      Config.
 
 end_per_testcase(cloudwatch_pushers, _Config) ->
+    ets:delete(results),
     ets:delete(metrics);
 end_per_testcase(_, _Config) ->
     ok.
 
 cloudwatch_pushers(_Config) ->
-    ct:sleep(500),
+    ct:sleep(560),
+    [{count, 5}] = ets:lookup(results, count),
     ok.
 
 
@@ -49,5 +53,10 @@ cloudwatch_pushers(_Config) ->
 -include_lib("inets/include/httpd.hrl").
 
 do(_ModData) ->
+    ets:update_counter(results, count, 1),
     {proceed,
-     [{response, {200, [<<"OK!">>]}}]}.
+     [{response, {200, [<<"<PutMetricDataResponse xmlns=\"http://monitoring.amazonaws.com/doc/2010-08-01/\">
+  <ResponseMetadata>
+    <RequestId>e16fc4d3-9a04-11e0-9362-093a1cae5385</RequestId>
+  </ResponseMetadata>
+</PutMetricDataResponse>">>]}}]}.
