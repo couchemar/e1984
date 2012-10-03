@@ -1,8 +1,15 @@
 -module(amqp_metrics).
 
--export([get_metrics/2]).
+-export([pre_start/0, get_metrics/2]).
 -define(FILE_DESCRIPTORS, "Free file descriptors for node ").
 -define(NAMESPACE, "CustomMetrics: AMQP").
+
+pre_start() ->
+    case inets:start() of
+        ok -> ok;
+        {error, {already_started, inets}} -> ok;
+        Error -> Error
+    end.
 
 get_metrics(nodes, Pid) ->
     get_nodes(Pid);

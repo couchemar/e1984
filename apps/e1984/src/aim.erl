@@ -26,8 +26,8 @@ init([Name, Cb, Metrics, TimeInterval]) ->
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast({start, TimeInt}, State) ->
-    inets:start(),
+handle_cast({start, TimeInt}, State=#state{cb_module=Cb}) ->
+    ok = Cb:pre_start(),
     timer:send_interval(TimeInt, tick),
     {noreply, State};
 handle_cast({result, Namespace, Aim, MetricName, Result},

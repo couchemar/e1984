@@ -19,11 +19,11 @@ start_link() ->
 init([]) ->
     ets:new(metrics, [set, named_table, public]),
     AIMS = [?AIM(aim_amqp,
-                  amqp_metrics,
+                 amqp_metrics,
                  [nodes],
                  5000),
             ?AIM(aim_test,
-                  test_metrics,
+                 test_metrics,
                  [test],
                  10000)
            ],
