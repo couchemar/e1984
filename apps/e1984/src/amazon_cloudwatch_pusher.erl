@@ -34,8 +34,6 @@ handle_cast(_Msg, State) ->
 
 handle_info(tick, State) ->
     lager:debug("Tick"),
-    %% Получить тут метрики в формате пригодном для отправки
-    %% в амазон и запушить их.
     MetricsDict = metrics_store:get_metrics(fun to_amazon_metrics/2),
     lager:debug("Metrics: ~p", [MetricsDict]),
     dict:map(
