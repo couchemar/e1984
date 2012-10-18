@@ -1,6 +1,6 @@
 -module(amqp_metrics).
 
--export([pre_start/0, get_metrics/2]).
+-export([pre_start/0, get_metrics/1]).
 -define(FILE_DESCRIPTORS, "Free file descriptors for node ").
 -define(NAMESPACE, "CustomMetrics: AMQP").
 
@@ -11,18 +11,18 @@ pre_start() ->
         Error -> Error
     end.
 
-get_metrics(nodes, Pid) ->
-    get_nodes(Pid);
-get_metrics(_Name, _Pid) ->
+get_metrics(nodes) ->
+    get_nodes();
+get_metrics(_Name) ->
     {error, unsuported}.
 
 process(Body) ->
     DBody = jsx:decode(Body),
     lists:foldl(fun process_node/2, dict:new(), DBody).
 
-get_nodes(Pid) ->
+get_nodes() ->
     Auth = "Basic " ++ base64:encode_to_string("guest:guest"),
-    ReceiverPid = spawn(fun() -> receive_nodes(Pid) end),
+    ReceiverPid = self(),
     {ok, _RequestId} = httpc:request(get,
                                      {"http://localhost:55672/api/nodes",
                                       [{"Authorization", Auth},
@@ -33,7 +33,15 @@ get_nodes(Pid) ->
                                      [{sync, false},
                                       {receiver, ReceiverPid}
                                      ]
-                                    ).
+                                    ),
+    receive
+        {http, {_Ref, Response}} ->
+            {_St, _Hdrs, Body} = Response,
+            Result = process(Body),
+            {result, ?NAMESPACE, ?MODULE, nodes, Result}
+    after 10000 ->
+            exit(timeout)
+    end.
 
 process_node(Node, Acc) ->
     NodeName = proplists:get_value(<<"name">>, Node),
@@ -41,17 +49,3 @@ process_node(Node, Acc) ->
     FdUsed = proplists:get_value(<<"fd_used">>, Node),
     FdFree = float(FdTotal - FdUsed),
     dict:store(?FILE_DESCRIPTORS ++ binary_to_list(NodeName), {FdFree, "Count"}, Acc).
-
-receive_nodes(Pid) ->
-    receive
-        {http, {_Ref, Response}} ->
-            {_St, _Hdrs, Body} = Response,
-            Result = process(Body),
-            cast_back(Pid, nodes, Result),
-            exit(normal)
-    after 10000 ->
-            exit(timeout)
-    end.
-
-cast_back(Pid, Metric, Result) ->
-    gen_server:cast(Pid, {result, ?NAMESPACE, ?MODULE, Metric, Result}).

@@ -38,7 +38,8 @@ handle_cast({result, Namespace, Aim, MetricName, Result},
                                          MetricName, Result]),
     metrics_store:put({Namespace, Aim, MetricName}, Result),
     {noreply, State};
-handle_cast(_Msg, State) ->
+handle_cast(Msg, State) ->
+    lager:debug("Got: ~p", [Msg]),
     {noreply, State}.
 
 handle_info(tick, State=#state{cb_module=Cb,
@@ -47,7 +48,10 @@ handle_info(tick, State=#state{cb_module=Cb,
     lager:debug("~s tick", [Name]),
     % Вообще тут стоило бы использовать какой-нибудь
     % simple_one_for_one супервизор.
-    [spawn(Cb, get_metrics, [MetricName, self()]) || MetricName <- Metrics],
+    SelfPid = self(),
+    [spawn(fun() -> Res = Cb:get_metrics(MetricName),
+                    gen_server:cast(SelfPid, Res)
+           end) || MetricName <- Metrics],
     {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
