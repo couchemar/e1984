@@ -11,7 +11,9 @@
 
 -record(state, {cb_module,
                 metrics,
-                aim_name}).
+                aim_name,
+                timer,
+                timer_int}).
 
 start_link(Name, Cb, Metrics, TimeInterval) ->
     gen_server:start_link(?MODULE,
@@ -21,15 +23,15 @@ start_link(Name, Cb, Metrics, TimeInterval) ->
 init([Name, Cb, Metrics, TimeInterval]) ->
     gen_server:cast(self(), {start, TimeInterval}),
     {ok, #state{cb_module=Cb, metrics=Metrics,
-                aim_name=Name}}.
+                aim_name=Name, timer_int=TimeInterval}}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
 handle_cast({start, TimeInt}, State=#state{cb_module=Cb}) ->
     ok = Cb:pre_start(),
-    timer:send_interval(TimeInt, tick),
-    {noreply, State};
+    Timer = erlang:send_after(TimeInt div 2, self(), tick),
+    {noreply, State#state{timer=Timer}};
 handle_cast({result, Namespace, Aim, MetricName, Result},
             State) ->
     lager:info("Got result from ~s:~s[~s]", [Namespace, Aim,
@@ -44,15 +46,17 @@ handle_cast(Msg, State) ->
 
 handle_info(tick, State=#state{cb_module=Cb,
                                aim_name=Name,
-                               metrics=Metrics}) ->
+                               metrics=Metrics,
+                               timer=OldTimer,
+                               timer_int=TimeInt}) ->
     lager:debug("~s tick", [Name]),
-    % Вообще тут стоило бы использовать какой-нибудь
-    % simple_one_for_one супервизор.
+    erlang:cancel_timer(OldTimer),
     SelfPid = self(),
     [spawn(fun() -> Res = Cb:get_metrics(MetricName),
                     gen_server:cast(SelfPid, Res)
            end) || MetricName <- Metrics],
-    {noreply, State};
+    NewTimer = erlang:send_after(TimeInt, self(), tick),
+    {noreply, State#state{timer=NewTimer}};
 handle_info(_Info, State) ->
     {noreply, State}.
 
