@@ -8,5 +8,7 @@
                   stdlib
                  ]},
   {mod, { e1984_app, []}},
-  {env, []}
+  {env, [{ec2_conf, {"1", "2"}},
+         {mon_conf, {"localhost", "9998", "http"}},
+         {rabbit_conf, {"guest", "guest"}}]}
  ]}.

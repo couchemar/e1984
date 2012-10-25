@@ -54,9 +54,10 @@ code_change(_OldVsn, State, _Extra) ->
 
 amazon_prepare() ->
     erlcloud:start(),
-    erlcloud_ec2:configure("11111111111111111111",
-                           "2222222222222222222222222222222222222222"),
-    erlcloud_mon:configure_host("localhost", "9998", "http").
+    {ok, {Id, Secret}} = application:get_env(ec2_conf),
+    erlcloud_ec2:configure(Id, Secret),
+    {ok, {Host, Port, Scheme}} = application:get_env(mon_conf),
+    erlcloud_mon:configure_host(Host, Port, Scheme).
 
 to_amazon_metrics(Key, Value) ->
     {NameSpace, _, _} = Key,

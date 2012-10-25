@@ -21,7 +21,9 @@ process(Body) ->
     lists:foldl(fun process_node/2, dict:new(), DBody).
 
 get_nodes() ->
-    Auth = "Basic " ++ base64:encode_to_string("guest:guest"),
+    {ok, {Login, Pwd}} = application:get_env(rabbit_conf),
+    Cred = Login ++ ":" ++ Pwd,
+    Auth = "Basic " ++ base64:encode_to_string(Cred),
     ReceiverPid = self(),
     {ok, _RequestId} = httpc:request(get,
                                      {"http://localhost:55672/api/nodes",
