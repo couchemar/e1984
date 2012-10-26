@@ -9,8 +9,8 @@
 -define(AIM(Name, Cb, Metrics, TimeInterval),
         {Name, {aim, start_link, [Name, Cb, Metrics, TimeInterval]},
          permanent, 5000, worker, [aim]}).
--define(PUSHER(I, TimeInterval),
-        {I, {I, start_link, [TimeInterval]},
+-define(PUSHER(I, TimeInterval, Config),
+        {I, {I, start_link, [TimeInterval, Config]},
          permanent, 5000, worker, [I]}).
 
 start_link() ->
@@ -27,7 +27,10 @@ init([]) ->
                  [test],
                  10000)
            ],
-    PUSHERS = [?PUSHER(amazon_cloudwatch_pusher, 20000)],
+    {ok, AmazonConfig} = application:get_env(amazon_conf),
+    PUSHERS = [?PUSHER(amazon_cloudwatch_pusher,
+                       20000,
+                       AmazonConfig)],
     {ok, { {one_for_one, 5, 10},
            AIMS ++ PUSHERS
          }

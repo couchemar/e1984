@@ -2,7 +2,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/1]).
+-export([start_link/2]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
@@ -14,25 +14,31 @@
 
 -define(SERVER, ?MODULE).
 
-start_link(TimeInterval) ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE,
-                          [TimeInterval], []).
+-record(state, {timer,
+                timer_int}).
 
-init([TimeInterval]) ->
-    gen_server:cast(self(), {start, TimeInterval}),
-    {ok, state}.
+
+start_link(TimeInterval, Config) ->
+    gen_server:start_link({local, ?SERVER}, ?MODULE,
+                          [TimeInterval, Config], []).
+
+init([TimeInterval, Config]) ->
+    gen_server:cast(self(), {start, TimeInterval, Config}),
+    {ok, #state{timer_int=TimeInterval}}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
 
-handle_cast({start, TimeInt}, State) ->
-    amazon_prepare(),
-    timer:send_interval(TimeInt, tick),
-    {noreply, State};
+handle_cast({start, TimeInt, Config}, State) ->
+    amazon_prepare(Config),
+    Timer = erlang:send_after(TimeInt div 2, self(), tick),
+    {noreply, State#state{timer=Timer}};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info(tick, State) ->
+handle_info(tick, State=#state{timer=OldTimer,
+                               timer_int=TimeInt}) ->
+    erlang:cancel_timer(OldTimer),
     lager:debug("Tick"),
     MetricsDict = metrics_store:get_metrics(fun to_amazon_metrics/2),
     lager:debug("Metrics: ~p", [MetricsDict]),
@@ -42,7 +48,8 @@ handle_info(tick, State) ->
       end,
       MetricsDict
      ),
-    {noreply, State};
+    NewTimer = erlang:send_after(TimeInt, self(), tick),
+    {noreply, State#state{timer=NewTimer}};
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -52,12 +59,15 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-amazon_prepare() ->
+amazon_prepare(Config) ->
     erlcloud:start(),
-    {ok, {Id, Secret}} = application:get_env(ec2_conf),
-    erlcloud_ec2:configure(Id, Secret),
-    {ok, {Host, Port, Scheme}} = application:get_env(mon_conf),
-    erlcloud_mon:configure_host(Host, Port, Scheme).
+    case proplists:get_value(ec2_conf, Config) of
+        {Id, Secret} -> erlcloud_ec2:configure(Id, Secret)
+    end,
+    case proplists:get_value(mon_conf, Config) of
+        {Host, Port, Scheme} ->
+            erlcloud_mon:configure_host(Host, Port, Scheme)
+    end.
 
 to_amazon_metrics(Key, Value) ->
     {NameSpace, _, _} = Key,

@@ -49,8 +49,8 @@ handle_info(tick, State=#state{cb_module=Cb,
                                metrics=Metrics,
                                timer=OldTimer,
                                timer_int=TimeInt}) ->
-    lager:debug("~s tick", [Name]),
     erlang:cancel_timer(OldTimer),
+    lager:debug("~s tick", [Name]),
     SelfPid = self(),
     [spawn(fun() -> Res = Cb:get_metrics(MetricName),
                     gen_server:cast(SelfPid, Res)

@@ -29,7 +29,9 @@ init_per_testcase(cloudwatch_pushers, Config) ->
                       dict:from_list([{"key1", {1.0, "Count"}}])),
     ets:new(results, [named_table, set, public]),
     ets:insert(results, {count, 0}),
-    amazon_cloudwatch_pusher:start_link(100),
+    amazon_cloudwatch_pusher:start_link(
+      100, [{ec2_conf, {"id", "secret"}},
+            {mon_conf, {"localhost", "9998", "http"}}]),
     Config;
 init_per_testcase(_, Config) ->
      Config.
@@ -41,7 +43,7 @@ end_per_testcase(_, _Config) ->
     ok.
 
 cloudwatch_pushers(_Config) ->
-    ct:sleep(560),
+    ct:sleep(650),
     [{count, 5}] = ets:lookup(results, count),
     ok.
 
